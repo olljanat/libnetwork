@@ -396,7 +396,8 @@ func (d *driver) CreateNetwork(id string, option map[string]interface{}, nInfo d
 			hnsIPv4Data[i].Pool = subnetIP
 		}
 
-		nInfo.UpdateIpamConfig(hnsIPv4Data)
+		// Temporarily disabled because it causes panic error
+		// nInfo.UpdateIpamConfig(hnsIPv4Data)
 
 	} else {
 		// Delete any stale HNS endpoints for this network.

@@ -1,4 +1,7 @@
-version: 2
+version: 2.1
+
+orbs:
+  win: circleci/windows@2.2.0
 
 defaults: &defaults
   working_directory: ~/go/src/github.com/docker/libnetwork
@@ -60,6 +63,39 @@ jobs:
           exclusive: false
       - run: make unit-tests
 
+  windows:
+    working_directory: c:\go\src\github.com\docker\libnetwork
+    executor: win/default
+    steps:
+      - checkout
+      - run: |
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $wc = New-Object net.webclient
+          $wc.Downloadfile("https://raw.githubusercontent.com/moby/docker-tdmgcc/master/gcc.zip","$env:TEMP\gcc.zip")
+          Expand-Archive -Path "$env:TEMP\gcc.zip" -DestinationPath C:\go\ -Force
+          $wc.Downloadfile("https://raw.githubusercontent.com/moby/docker-tdmgcc/master/runtime.zip","$env:TEMP\runtime.zip")
+          Expand-Archive -Path "$env:TEMP\runtime.zip" -DestinationPath C:\go\ -Force
+          $wc.Downloadfile("https://raw.githubusercontent.com/moby/docker-tdmgcc/master/binutils.zip","$env:TEMP\binutils.zip")
+          Expand-Archive -Path "$env:TEMP\binutils.zip" -DestinationPath C:\go\ -Force
+      - run: |
+          Stop-Service -Name docker
+          Set-Service -Name docker -StartupType Disabled
+          Restart-Service -Name hns
+      - run: |
+          $failed = $false
+
+          cd c:\go\src\github.com\docker\libnetwork\drivers\windows
+          go test --test.v
+          if ($? -eq $False) { $failed = $true }
+
+          cd c:\go\src\github.com\docker\libnetwork\ipams\windowsipam
+          go test --test.v
+          if ($? -eq $False) { $failed = $true }
+
+          if ($failed) {
+            exit 1
+          }
+
 workflows:
   version: 2
   ci:
@@ -77,3 +113,4 @@ workflows:
       - unit-tests:
           requires:
             - builder
+      - windows

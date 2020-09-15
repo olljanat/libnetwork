@@ -61,6 +61,10 @@ func TestTransparent(t *testing.T) {
 	testNetwork("transparent", t)
 }
 
+func TestOverlay(t *testing.T) {
+	testNetwork("overlay", t)
+}
+
 type testEndpoint struct {
 	t                     *testing.T
 	src                   string
